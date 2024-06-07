@@ -101,19 +101,24 @@ def generate_output(markdown_text, to_ansi=False):
         sys.exit(1)
 
 def main():
-    parser = argparse.ArgumentParser(description="Markdown to HTML converter")
+    parser = argparse.ArgumentParser(description="Markdown to HTML/ANSI converter")
     parser.add_argument('input', help="Path to the input markdown file")
-    parser.add_argument('--out', help="Path to the output HTML file")
+    parser.add_argument('--out', help="Path to the output file")
+    parser.add_argument('--format', choices=['html', 'ansi'], help="Output format: html or ansi")
     args = parser.parse_args()
 
     markdown_text = read_file(args.input)
-    html_output = generate_output(markdown_text)
+
+    if args.format == 'ansi' or (not args.format and not args.out):
+        output = generate_output(markdown_text, to_ansi=True)
+    else:
+        output = generate_output(markdown_text)
 
     if args.out:
         with open(args.out, 'w', encoding='utf-8') as file:
-            file.write(html_output)
+            file.write(output)
     else:
-        print(html_output)
+        print(output)
 
 if __name__ == "__main__":
     main()

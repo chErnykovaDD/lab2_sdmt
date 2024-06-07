@@ -2,48 +2,60 @@ import sys
 import argparse
 import re
 
-def parse_markdown(input_text):
-    html_output = []
+def parse_markdown(input_text, to_ansi=False):
+    output = []
     in_preformatted = False
 
     for line in input_text.split('\n'):
         if line.strip() == "":
             if not in_preformatted:
-                html_output.append("</p><p>")
+                output.append("</p><p>" if not to_ansi else "\n\n")
             else:
-                html_output.append("\n")
+                output.append("\n")
             continue
 
         if line.startswith("```"):
             if in_preformatted:
-                html_output.append("</pre>")
+                output.append("</pre>" if not to_ansi else "\033[0m")  # Disable inverse mode
             else:
-                html_output.append("<pre>")
+                output.append("<pre>" if not to_ansi else "\033[7m")  # Enable inverse mode
             in_preformatted = not in_preformatted
             continue
 
         if in_preformatted:
-            html_output.append(line + "\n")  # Ensure new lines are preserved
+            output.append(line + "\n")  # Ensure new lines are preserved
             continue
 
-        line = handle_markdown_elements(line)
+        line = handle_markdown_elements(line, to_ansi)
 
-        html_output.append(line)
+        output.append(line)
 
     if in_preformatted:
         raise ValueError("Invalid markdown: unclosed preformatted block")
 
-    return '<p>' + ''.join(html_output) + '</p>'
+    # Add <p> tags at the beginning and end of the parsed markdown string
+    return '<p>' + ''.join(output) + '</p>' if not to_ansi else ''.join(output).strip('\n\n')
 
-def handle_markdown_elements(line):
-    markdown_elements = [
-        (r'\*\*(\S.*?\S)\*\*', r'<b>\1</b>'),
-        (r'__(.*?)__', r'<b>\1</b>'),
-        (r'`(\S.*?\S)`', r'<tt>\1</tt>'),
-        (r'(^|\s)_(\S.*?\S)_(?=\s|$)', r'\1<i>\2</i>'),
-        (r'^# (.*)', r'<h1>\1</h1>'),
-        (r'^## (.*)', r'<h2>\1</h2>')
-    ]
+def handle_markdown_elements(line, to_ansi):
+
+    if to_ansi:
+        markdown_elements = [
+            (r'\*\*(\S.*?\S)\*\*', r'\033[1m\1\033[0m'),  # Bold
+            (r'__(.*?)__', r'\033[1m\1\033[0m'),          # Bold
+            (r'`(\S.*?\S)`', r'\033[7m\1\033[0m'),        # Monospaced
+            (r'(^|\s)_(\S.*?\S)_(?=\s|$)', r'\1\033[3m\2\033[0m'),  # Italic
+            (r'^# (.*)', r'\033[1;4m\1\033[0m'),          # H1
+            (r'^## (.*)', r'\033[1m\1\033[0m')            # H2
+        ]
+    else:
+        markdown_elements = [
+            (r'\*\*(\S.*?\S)\*\*', r'<b>\1</b>'),
+            (r'__(.*?)__', r'<b>\1</b>'),
+            (r'`(\S.*?\S)`', r'<tt>\1</tt>'),
+            (r'(^|\s)_(\S.*?\S)_(?=\s|$)', r'\1<i>\2</i>'),
+            (r'^# (.*)', r'<h1>\1</h1>'),
+            (r'^## (.*)', r'<h2>\1</h2>')
+        ]
 
     for pattern, replacement in markdown_elements:
         line = re.sub(pattern, replacement, line)
@@ -80,10 +92,10 @@ def read_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         return file.read()
 
-def generate_html(markdown_text):
+def generate_output(markdown_text, to_ansi=False):
     try:
-        html_output = parse_markdown(markdown_text)
-        return html_output
+        output = parse_markdown(markdown_text, to_ansi)
+        return output
     except ValueError as e:
         sys.stderr.write(str(e) + '\n')
         sys.exit(1)
@@ -95,7 +107,7 @@ def main():
     args = parser.parse_args()
 
     markdown_text = read_file(args.input)
-    html_output = generate_html(markdown_text)
+    html_output = generate_output(markdown_text)
 
     if args.out:
         with open(args.out, 'w', encoding='utf-8') as file:

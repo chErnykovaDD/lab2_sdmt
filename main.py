@@ -37,6 +37,7 @@ def parse_markdown(input_text, to_ansi=False):
     return '<p>' + ''.join(output) + '</p>' if not to_ansi else ''.join(output).strip('\n\n')
 
 def handle_markdown_elements(line, to_ansi):
+    check_nested_formatting(line)
 
     if to_ansi:
         markdown_elements = [
@@ -64,6 +65,21 @@ def handle_markdown_elements(line, to_ansi):
     check_invalid_combinations(line)
 
     return line
+
+def check_nested_formatting(line):
+    nested_patterns = [
+        (r'\*\*(.*?)_(.*?)_\*\*', "nested bold and italic"),
+        (r'_(.*?)\*\*(.*?)\*\*_', "nested italic and bold"),
+        (r'\*\*(.*?)`(.*?)`\*\*', "nested bold and monospaced"),
+        (r'`(.*?)\*\*(.*?)\*\*`', "nested monospaced and bold"),
+        (r'_(.*?)`(.*?)`_', "nested italic and monospaced"),
+        (r'`(.*?)_(.*?)_`', "nested monospaced and italic")
+    ]
+
+    for pattern, message in nested_patterns:
+        if re.search(pattern, line):
+            raise ValueError(f"Invalid markdown: {message}")
+
 def check_unclosed_markdown(line):
     unclosed_markdown = [
         (r'(?<!\w)_\S', "italic"),

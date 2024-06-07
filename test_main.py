@@ -22,6 +22,46 @@ def test_generate_output_ansi(mocker):
     except Exception as e:
         pytest.fail(f"test_generate_output_ansi failed with exception: {e}")
 
+def test_parse_markdown_valid_bold():
+    input_text = "**bold**"
+    expected_output = '<p><b>bold</b></p>'
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_valid_bold failed with exception: {e}")
+
+def test_parse_markdown_valid_italic():
+    input_text = "_italic_"
+    expected_output = '<p><i>italic</i></p>'
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_valid_italic failed with exception: {e}")
+
+def test_parse_markdown_valid_monospaced():
+    input_text = "`monospaced`"
+    expected_output = '<p><tt>monospaced</tt></p>'
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_valid_monospaced failed with exception: {e}")
+
+def test_parse_markdown_valid_headers():
+    input_text = "# Header1\n## Header2"
+    expected_output = '<p><h1>Header1</h1><h2>Header2</h2></p>'
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_valid_headers failed with exception: {e}")
+
+def test_parse_markdown_valid_preformatted():
+    input_text = "```\npreformatted text\n```"
+    expected_output = '<p><pre>preformatted text\n</pre></p>'
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_preformatted failed with exception: {e}")
+
 def test_parse_markdown_nested_formatting():
     input_text = "**bold and _italic_**"
     try:

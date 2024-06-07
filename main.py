@@ -86,7 +86,7 @@ def check_unclosed_markdown(line):
         (r'\S_(?!\w)', "italic"),
         (r'(?<!\w)\*\*\S', "bold"),
         (r'\S\*\*(?!\w)', "bold"),
-        (r'(?<!\w)`\S', "monospaced"),
+        # Перевірка, чи ловить СI помилку (r'(?<!\w)`\S', "monospaced"),
         (r'\S`(?!\w)', "monospaced")
     ]
 

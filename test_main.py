@@ -8,6 +8,14 @@ def test_read_file(mocker):
     except Exception as e:
         pytest.fail(f"test_read_file failed with exception: {e}")
 
+def test_read_file_nonexistent(mocker):
+    mocker.patch('builtins.open', side_effect=FileNotFoundError())
+    try:
+        read_file('nonexistent_file')
+        pytest.fail("Expected FileNotFoundError, but no exception was raised")
+    except FileNotFoundError as e:
+        assert isinstance(e, FileNotFoundError), f"Expected FileNotFoundError, but got {type(e)}"
+
 def test_generate_output_html(mocker):
     mocker.patch('main.parse_markdown', return_value='html')
     try:
@@ -61,6 +69,78 @@ def test_parse_markdown_valid_preformatted():
         assert parse_markdown(input_text) == expected_output
     except Exception as e:
         pytest.fail(f"test_parse_markdown_preformatted failed with exception: {e}")
+
+def test_parse_markdown_unclosed_bold():
+    input_text = "**bold text"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: unclosed bold', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: unclosed bold", f"Expected error message 'Invalid markdown: unclosed bold', but got '{str(e)}'"
+
+def test_parse_markdown_unclosed_italic():
+    input_text = "_italic text"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: unclosed italic', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: unclosed italic", f"Expected error message 'Invalid markdown: unclosed italic', but got '{str(e)}'"
+
+def test_parse_markdown_unclosed_monospaced():
+    input_text = "`monospaced text"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: unclosed monospaced', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: unclosed monospaced", f"Expected error message 'Invalid markdown: unclosed monospaced', but got '{str(e)}'"
+
+def test_parse_markdown_unclosed_preformatted():
+    input_text = "```\npreformatted text"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: unclosed preformatted block', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: unclosed preformatted block", f"Expected error message 'Invalid markdown: unclosed preformatted block', but got '{str(e)}'"
+
+def test_parse_markdown_invalid_bold_combination():
+    input_text = "** bold text **"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: spaces are not allowed between bold markers and text', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: spaces are not allowed between bold markers and text", f"Expected error message 'Invalid markdown: spaces are not allowed between bold markers and text', but got '{str(e)}'"
+
+def test_parse_markdown_invalid_italic_combination():
+    input_text = "_ italic text _"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: spaces are not allowed between italic markers and text', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: spaces are not allowed between italic markers and text", f"Expected error message 'Invalid markdown: spaces are not allowed between italic markers and text', but got '{str(e)}'"
+
+def test_parse_markdown_invalid_monospaced_combination():
+    input_text = "` monospaced text `"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: spaces are not allowed between monospaced markers and text', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: spaces are not allowed between monospaced markers and text", f"Expected error message 'Invalid markdown: spaces are not allowed between monospaced markers and text', but got '{str(e)}'"
+
+def test_parse_markdown_incomplete_preformatted():
+    input_text = "```\npreformatted text\n``"
+    try:
+        parse_markdown(input_text)
+        pytest.fail("Expected ValueError with message 'Invalid markdown: unclosed preformatted block', but no exception was raised")
+    except ValueError as e:
+        assert str(e) == "Invalid markdown: unclosed preformatted block", f"Expected error message 'Invalid markdown: unclosed preformatted block', but got '{str(e)}'"
+
+def test_parse_markdown_multiple_headers():
+    input_text = "# Header 1\n## Header 2"
+    expected_output = "<p><h1>Header 1</h1><h2>Header 2</h2></p>"
+    try:
+        assert parse_markdown(input_text) == expected_output
+    except Exception as e:
+        pytest.fail(f"test_parse_markdown_multiple_headers failed with exception: {e}")
 
 def test_parse_markdown_nested_formatting():
     input_text = "**bold and _italic_**"
